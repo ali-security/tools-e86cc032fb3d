@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"runtime"
 	"strconv"
+	"strings"
 	"testing"
 	"unicode"
 )
@@ -33,6 +34,20 @@ func TestStaticIsUpToDate(t *testing.T) {
   $ git diff
 to see the differences.`)
 
+	}
+}
+
+// TestJQueryNoSelfClosingTagExpansion guards against CVE-2020-11022: the
+// bundled jQuery must not rewrite self-closing tags (e.g. "<style/>") into
+// open/close pairs ("<style></style>") before parsing HTML, as that turns
+// previously sanitized markup into executable script.
+func TestJQueryNoSelfClosingTagExpansion(t *testing.T) {
+	js, ok := Files["jquery.js"]
+	if !ok {
+		t.Fatal("jquery.js is missing from Files")
+	}
+	if strings.Contains(js, `"<$1></$2>"`) {
+		t.Error(`jquery.js expands self-closing tags with "<$1></$2>" (CVE-2020-11022)`)
 	}
 }
 
